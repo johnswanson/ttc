@@ -7,6 +7,7 @@ import (
 	"github.com/johnswanson/ttc/dialog"
 	"github.com/johnswanson/ttc/pings"
 	"github.com/spf13/viper"
+	"os"
 	"time"
 )
 
@@ -29,7 +30,11 @@ func main() {
 	}
 
 	config := ttc.Config{}
-	api.GetConfig(API, &config)
+	err := api.GetConfig(API, &config)
+	if err != nil {
+		fmt.Printf("Failed to retrieve configuration!: %v", err)
+		os.Exit(1)
+	}
 	pings := pings.PingChannel(config)
 	fmt.Printf("CONFIG: %v\n", config)
 
@@ -37,13 +42,15 @@ func main() {
 	nextPing := <-pings
 	for t := range ticker.C {
 		now := t.Unix()
-		fmt.Printf("Ticker: %v\n", now)
 		for nextPing < now {
 			if now-nextPing <= 60*3 {
 				err, ping := dialog.Request(nextPing)
 				p := &ping
-				if err != nil {
+				if err == nil {
+					fmt.Printf("Saving!\n")
 					api.Save(API, p)
+				} else {
+					fmt.Printf("ERROR: %v\n", err)
 				}
 			}
 			nextPing = <-pings

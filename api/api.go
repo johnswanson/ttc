@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/johnswanson/ttc"
 	"net/http"
@@ -34,6 +35,9 @@ func GetConfig(api ttc.API, config *ttc.Config) error {
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("Failed to retrieve config from server!")
 	}
 	defer resp.Body.Close()
 	json.NewDecoder(resp.Body).Decode(config)
